@@ -49,6 +49,36 @@ app.get('/statement', verifyIfCustomerExistsCPF, (req, res) => {
     return res.json(customer.statement);
 })
 
+//Realizar deposito
+app.post('/deposit', verifyIfCustomerExistsCPF, (req, res) => {
+    const {description, amount} = req.body;
+    const {customer} = req;
+
+    const statementOperation = {
+        description,
+        amount,
+        created_at: new Date(),
+        type: "credit"
+    }
+
+    customer.statement.push(statementOperation);
+    return res.status(201).send();
+})
+
+//Realizar saque
+app.post('/withdraw', verifyIfCustomerExistsCPF, (req, res) => {
+    const {amount} = req.body;
+    const {customer} = req;
+
+    const withdrawOperation = {
+        amount,
+        created_at: new Date(),
+        type: "debit"
+    }
+
+    customer.statement.push(withdrawOperation);
+    return res.status(201).send();
+})
 
 
 app.listen(port)
