@@ -22,6 +22,19 @@ function verifyIfCustomerExistsCPF(req, res, next){
     return next();
 }
 
+// Middleware - Verifica se cliente tem saldo
+function getBalance(statement){
+    const balance = statement.reduce((acc, operation) =>{
+        if(operation.type == 'credit'){
+            return  acc + operation.amount;
+        }else{
+            return acc - operation.amount;
+        }
+    }, 0);
+
+    return balance;
+}
+
 //Cadastro de usuário
 app.post('/account', (req, res) => {
     const {cpf, name} = req.body;
@@ -69,16 +82,44 @@ app.post('/deposit', verifyIfCustomerExistsCPF, (req, res) => {
 app.post('/withdraw', verifyIfCustomerExistsCPF, (req, res) => {
     const {amount} = req.body;
     const {customer} = req;
-
-    const withdrawOperation = {
+    const balance = getBalance(customer.statement);
+    
+    if(balance < amount){
+        return res.status(400).json({error: "Você não possuí saldo para essa operação"}).send();
+    }
+    
+    const statementOperation = {
         amount,
         created_at: new Date(),
         type: "debit"
     }
-
-    customer.statement.push(withdrawOperation);
+    
+    customer.statement.push(statementOperation);
     return res.status(201).send();
 })
+
+//Exibir extrato por período
+app.get('/statement/date', verifyIfCustomerExistsCPF, (req, res) => {
+    const {customer} = req;
+    const {date} =  req.query;
+
+    const formatDate = new Date(date + ' 00:00')
+    const statement = customer.statement.filter(statement => statement.created_at.toDateString() === new Date(formatDate).toDateString())
+    return res.json(statement);
+})
+
+//Obter dados da conta
+
+//Atualizar dados da conta
+app.put("/account", verifyIfCustomerExistsCPF, (req, res) => {
+    const {name} = req.body;
+    const {customer} = req;
+
+    customer.name = name;
+    return res.status(201).send();
+})
+
+//Remover conta
 
 
 app.listen(port)
