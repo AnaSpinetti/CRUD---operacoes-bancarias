@@ -10,12 +10,12 @@ app.use(express.json());
 
 // Middleware - Verifica se existe o cliente cadastrado
 function verifyIfCustomerExistsCPF(req, res, next){
-    const {cpf} = req.headers
+    const {cpf} = req.headers;
 
     const customer = customers.find(customer => customer.cpf === cpf);
 
     if(!customer){
-        res.status(400).json({message: "Cliente não localizado"});
+        return res.status(400).json({message: "Cliente não localizado"});
     }
 
     req.customer = customer;
@@ -39,7 +39,7 @@ function getBalance(statement){
 app.post('/account', (req, res) => {
     const {cpf, name} = req.body;
     //Verificar se o cliente já existe no cadastro
-    const customerAlreadyExists = customers.some(customer => customer.cpf)
+    const customerAlreadyExists = customers.some(customer => customer.cpf === cpf)
     
     if(customerAlreadyExists){
         return res.status(400).json({error: 'Usuário já cadastrado, efetue o login no sistema'})
@@ -109,6 +109,11 @@ app.get('/statement/date', verifyIfCustomerExistsCPF, (req, res) => {
 })
 
 //Obter dados da conta
+app.get('/account', verifyIfCustomerExistsCPF, (req, res) => {
+    const {customer} = req;
+
+    return res.json(customer)
+})
 
 //Atualizar dados da conta
 app.put("/account", verifyIfCustomerExistsCPF, (req, res) => {
@@ -120,6 +125,18 @@ app.put("/account", verifyIfCustomerExistsCPF, (req, res) => {
 })
 
 //Remover conta
+app.delete("/account", verifyIfCustomerExistsCPF, (req, res) =>{
+    const {customer} = req;
 
+    customers.splice(customer, 1);
+    return res.status(200).json(customers)
+})
+
+// Exibir saldo
+app.get("/balance", verifyIfCustomerExistsCPF, (req, res) => {
+    const {customer} = req;
+    const balance = getBalance(customer.statement);
+    return res.json(balance)
+})
 
 app.listen(port)
