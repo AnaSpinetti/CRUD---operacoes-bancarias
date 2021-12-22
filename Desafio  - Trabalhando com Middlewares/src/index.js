@@ -36,7 +36,7 @@ function checksTodoExists(request, response, next) {
   const {id} = request.params;
   
   const user = users.find(user => user.username === username)
-  const todo = user.todos.find(todo => todo.id === id)
+  const todo = user.todos.find(todo => todo.id === uuid.validate(id))
   
   if(!todo){
     return response.status(404).json({error: 'Tarefa não localizada'})
