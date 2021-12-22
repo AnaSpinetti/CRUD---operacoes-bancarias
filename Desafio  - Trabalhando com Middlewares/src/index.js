@@ -36,18 +36,26 @@ function checksTodoExists(request, response, next) {
   const {id} = request.params;
   
   const user = users.find(user => user.username === username)
-  const todo = user.todos.find(todo => todo.id === uuid.validate(id))
+
+  if(!user){
+    return response.status(404).json({error: 'Usuário não localizado'})
+  }
+
+  const isUUID = validate(id);
+
+  if (!isUUID) {
+    return response.status(400).json({ error: "Id incorreto" });
+  }
+
+  const todo = user.todos.find(todo => todo.id === id)
   
   if(!todo){
     return response.status(404).json({error: 'Tarefa não localizada'})
   }
-  if(!user){
-    return response.status(404).json({error: 'Usuário não localizado'})
-  }
   
   
-  request.todo = todo;
   request.user = user;
+  request.todo = todo;
   
   return next()
 }
